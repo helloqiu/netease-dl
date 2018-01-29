@@ -15,6 +15,7 @@ import click
 import requests
 from requests.exceptions import RequestException, Timeout, ProxyError
 from requests.exceptions import ConnectionError as ConnectionException
+from lxml import html
 
 from .compat import cookielib
 from .encrypt import encrypted_request
@@ -24,7 +25,6 @@ from .logger import get_logger
 from .exceptions import (
     SearchNotFound, SongNotAvailable, GetRequestIllegal, PostRequestIllegal)
 from .models import Song, Album, Artist, Playlist, User
-
 
 LOG = get_logger(__name__)
 
@@ -334,6 +334,15 @@ class Crawler(object):
             lyric_info = 'Lyric not found.'
         return lyric_info
 
+    def get_artist_by_id(self, song_id):
+        url = 'http://music.163.com/song'
+        result = self.session.get(url, params={'id': song_id}, timeout=self.timeout,
+                                  proxies=self.proxies)
+        tree = html.fromstring(result.text)
+        artist = tree.xpath('/html/head/title//text()')[0]
+        artist = artist.split(' - ')[1]
+        return artist
+
     @exception_handle
     def get_song_by_url(self, song_url, song_name, folder, lyric_info):
         """Download a song and save it to disk.
@@ -346,7 +355,7 @@ class Crawler(object):
 
         if not os.path.exists(folder):
             os.makedirs(folder)
-        fpath = os.path.join(folder, song_name+'.mp3')
+        fpath = os.path.join(folder, song_name + '.mp3')
 
         if sys.platform == 'win32' or sys.platform == 'cygwin':
             valid_name = re.sub(r'[<>:"/\\|?*]', '', song_name)
@@ -358,7 +367,7 @@ class Crawler(object):
             resp = self.download_session.get(
                 song_url, timeout=self.timeout, stream=True)
             length = int(resp.headers.get('content-length'))
-            label = 'Downloading {} {}kb'.format(song_name, int(length/1024))
+            label = 'Downloading {} {}kb'.format(song_name, int(length / 1024))
 
             with click.progressbar(length=length, label=label) as progressbar:
                 with open(fpath, 'wb') as song_file:
@@ -371,7 +380,7 @@ class Crawler(object):
             folder = os.path.join(folder, 'lyric')
             if not os.path.exists(folder):
                 os.makedirs(folder)
-            fpath = os.path.join(folder, song_name+'.lrc')
+            fpath = os.path.join(folder, song_name + '.lrc')
             with open(fpath, 'w') as lyric_file:
                 lyric_file.write(lyric_info)
 

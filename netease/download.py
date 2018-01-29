@@ -18,7 +18,6 @@ from .weapi import Crawler
 from .config import person_info_path, cookie_path
 from .logger import get_logger
 
-
 LOG = get_logger(__name__)
 
 
@@ -30,7 +29,7 @@ def timeit(method):
         result = method(*args, **kwargs)
         end = time.time()
 
-        click.echo('Cost {}s'.format(int(end-start)))
+        click.echo('Cost {}s'.format(int(end - start)))
         return result
 
     return wrapper
@@ -107,6 +106,8 @@ class NetEase(object):
                 lyric_info = None
             song_name = song_name.replace('/', '')
             song_name = song_name.replace('.', '')
+            artist = self.crawler.get_artist_by_id(song_id)
+            song_name = "{}-{}".format(artist, song_name)
             self.crawler.get_song_by_url(url, song_name, folder, lyric_info)
         except RequestException as exception:
             click.echo(exception)

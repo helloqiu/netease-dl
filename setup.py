@@ -17,6 +17,7 @@ setup(
         'pycryptodomex',
         'click>=5.1',
         'PrettyTable>=0.7.2',
+        'lxml'
     ],
 
     entry_points='''
